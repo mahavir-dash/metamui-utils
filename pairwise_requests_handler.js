@@ -12,11 +12,11 @@ const { DID_COMM_SERVER_URL, AUTH_SERVER_URL, WHITELISTED_DIDS } = require('./co
 
 const axiosInstance = axios.create({
     baseURL: AUTH_SERVER_URL + "/v1/api",
-    timeout: 20000,
+    timeout: 10000,
 });
 
 let webSocketRef = {};
-const WEBSOCKET_TIMEOUT = 10000; // 10 Seconds
+const WEBSOCKET_TIMEOUT = 5000; // 10 Seconds
 const ISSUER_APP_ID = "MASTER";
 
 async function get_dids() {

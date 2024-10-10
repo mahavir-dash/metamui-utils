@@ -314,8 +314,8 @@ function closeWebSocket(user_did) {
 }
 
 async function handle_request(whitelistedDid) {
+    const user_did = whitelistedDid.did;
     try {
-        const user_did = whitelistedDid.did;
         console.log('Processing DID:', user_did);
         const mnemonics = whitelistedDid.mnemonics;
         console.log('Processing Mnemonics First Word:', mnemonics.split(' ')[0]);
@@ -341,8 +341,10 @@ async function handle_request(whitelistedDid) {
             return approvePairwise(user_did, request, mnemonics);
         });
         await Promise.all(requests);
+        await closeWebSocket(user_did);
     } catch (err) {
         console.log("Handle Request Failed: ", err);
+        await closeWebSocket(user_did);
     }
 }
 
@@ -358,7 +360,6 @@ async function handle_job() {
     } catch (err) {
         console.log("Handle Job Failed: ", err);
     }
-    await closeWebSocket();
     console.timeEnd("pairwise_requests_handler");
     setImmediate(() => {
         process.exit(0);

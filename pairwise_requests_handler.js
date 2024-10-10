@@ -332,6 +332,7 @@ async function handle_request(whitelistedDid) {
         console.log("Pending requests:", pendingRequests);
         if (pendingRequests.length == 0) {
             console.log("No pending requests");
+            await closeWebSocket(user_did);
             return;
         }
         pendingRequests = eliminateDuplicateRequests(pendingRequests);

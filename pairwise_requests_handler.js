@@ -364,3 +364,5 @@ async function handle_job() {
         process.exit(0);
     });
 }
+
+handle_job();

@@ -360,6 +360,7 @@ async function handle_job() {
     }
     await closeWebSocket();
     console.timeEnd("pairwise_requests_handler");
+    setImmediate(() => {
+        process.exit(0);
+    });
 }
-
-setInterval(handle_job, 20000);

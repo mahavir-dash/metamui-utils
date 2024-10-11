@@ -299,6 +299,11 @@ function eliminateDuplicateRequests(requests) {
     return uniqueRequests;
 }
 
+function filterPairwiseVerificationRequests(requests) {
+    return requests.filter(request => request?.value?.event === "PairwiseVerification");
+}
+
+
 function closeWebSocket(user_did) {
     return new Promise((resolve) => {
         if (webSocketRef[user_did] && webSocketRef[user_did].readyState === WebSocket.OPEN) {
@@ -336,6 +341,7 @@ async function handle_request(whitelistedDid) {
             return;
         }
         pendingRequests = eliminateDuplicateRequests(pendingRequests);
+        pendingRequests = filterPairwiseVerificationRequests(pendingRequests);
         console.log("Pending requests after elimination:", pendingRequests);
         let requests = pendingRequests.map(async (request) => {
             console.log("Request:", request);

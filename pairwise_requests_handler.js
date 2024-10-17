@@ -7,7 +7,7 @@ const process = require('process');
 const WebSocket = require('ws');
 const axios = require('axios');
 
-const { DID_COMM_SERVER_URL, AUTH_SERVER_URL, WHITELISTED_DIDS } = require('./config');
+const { DID_COMM_SERVER_URL, AUTH_SERVER_URL, WHITELISTED_DIDS } = require('./config.prod');
 
 
 const axiosInstance = axios.create({
@@ -21,6 +21,22 @@ const ISSUER_APP_ID = "MASTER";
 
 async function get_dids() {
     return WHITELISTED_DIDS;
+}
+
+async function verify_token(token) {
+    return new Promise((resolve, reject) => {
+        axiosInstance.post("/token/verify/", {
+            token,
+        }).then((response) => {
+            if (response?.data?.data?.is_verified === true) {
+                resolve(response.data);
+            } else { 
+                reject(new Error("Token verification failed"));
+            }
+        }).catch((err) => {
+            reject(err);
+        });
+    });
 }
 
 async function login(user_did, mnemonics, app_id = "MMUISSID") {
@@ -63,6 +79,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
 
 const authenticate = (user_did, token) => {
     return new Promise((resolve, reject) => {
+        console.time("authenticate-"+user_did);
         if (!webSocketRef[user_did] || webSocketRef[user_did].readyState !== WebSocket.OPEN) {
             return reject(new Error("WebSocket is not open" + user_did));
         }
@@ -77,6 +94,7 @@ const authenticate = (user_did, token) => {
             console.log("Received message:", message);
             if (message.event === "AuthenticationAck") {
                 clearTimeout(timeout);
+                console.timeEnd("authenticate-" + user_did);
                 webSocketRef[user_did].removeEventListener("message", handleResponse);
                 resolve(message.data);
             }
@@ -95,6 +113,7 @@ const authenticate = (user_did, token) => {
 
 const fetchDIDCache = (user_did) => {
     return new Promise((resolve, reject) => {
+        console.time("fetch-requests-" + user_did);
         if (!webSocketRef[user_did] || webSocketRef[user_did].readyState !== WebSocket.OPEN) {
             return reject(new Error("WebSocket is not open" + user_did));
         }
@@ -109,6 +128,7 @@ const fetchDIDCache = (user_did) => {
             console.log("Received message:", message);
             if (message.event === "FetchDIDCacheResponse") {
                 clearTimeout(timeout);
+                console.timeEnd("fetch-requests-" + user_did);
                 webSocketRef[user_did].removeEventListener("message", handleResponse);
                 resolve(message.data);
             }
@@ -125,6 +145,7 @@ const fetchDIDCache = (user_did) => {
 
 const sendPairwiseVerificationConfirmation = (user_did, data) => {
     return new Promise((resolve, reject) => {
+        console.time("pairwise-confirmation-" + user_did);
         if (!webSocketRef[user_did] || webSocketRef[user_did].readyState !== WebSocket.OPEN) {
             return reject(new Error("WebSocket is not open" + user_did));
         }
@@ -139,6 +160,7 @@ const sendPairwiseVerificationConfirmation = (user_did, data) => {
             console.log("Received message:", message);
             if (message.event === "PairwiseVerificationConfirmationAck") {
                 clearTimeout(timeout);
+                console.timeEnd("pairwise-confirmation-" + user_did);
                 webSocketRef[user_did].removeEventListener("message", handleResponse);
                 resolve(message.data);
             }
@@ -324,7 +346,16 @@ async function handle_request(whitelistedDid) {
         console.log('Processing DID:', user_did);
         const mnemonics = whitelistedDid.mnemonics;
         console.log('Processing Mnemonics First Word:', mnemonics.split(' ')[0]);
-        let token = await login(whitelistedDid.did, whitelistedDid.mnemonics, whitelistedDid.app_id);
+        let token = whitelistedDid.token;
+        try {
+            if (!token) {
+                throw new Error("Token not found");
+            }
+            await verify_token(whitelistedDid.token);
+        } catch (error) {
+            token = await login(whitelistedDid.did, whitelistedDid.mnemonics, whitelistedDid.app_id);
+            console.log('Error:', error);
+        }
 
         const websocketUrl = DID_COMM_SERVER_URL + "/ws/connect/";
         await connectDidComm(user_did, websocketUrl);

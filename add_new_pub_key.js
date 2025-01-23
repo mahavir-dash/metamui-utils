@@ -12,14 +12,14 @@ async function addNewPublicKey(userDid, currentMnemonics, newMnemonics) {
         newPublicKey: newMnemonicsKp.publicKey,
     };
     const vcHex = didModule.generateAddKeyVC(addKey, userDid, currentMnemonicsKp);
-    // const vcObject = utils.decodeHex(vcHex, 'AddPubKeyVC');
-    // const vcProperty = utils.decodeHex(vcObject.vc_property, 'AddPubKeyVCProperties');
+    const vcObject = utils.decodeHex(vcHex, 'AddPubKeyVC');
+    const vcProperty = utils.decodeHex(vcObject.vc_property, 'AddPubKeyVCProperties');
     await didModule.addPublicKey(vcHex, newMnemonicsKp, provider);
     if (provider) {
         provider.disconnect();
     }
 } 
 let userDid = 'did:ssid:fenn';
-let currentMnemonics = 'salon stadium reflect appear taxi entry talk aunt century double hint price conduct broken satisfy hover rookie slim vintage clip winner range cost clay';
-let newMnemonics = 'kidney thumb camera lyrics present angry poet above unveil inch latin beauty';
-addNewPublicKey(userDid, );
+let currentMnemonics = '';
+let newMnemonics = '';
+addNewPublicKey(userDid, currentMnemonics, newMnemonics);

@@ -1,4 +1,5 @@
 const { vc, connection, config, utils } = require("mui-metablockchain-sdk");
+const { ISSUER_DID, ISSUER_MNEMONICS, SUDO_MNEMONICS } = require('./config');
 
 const TOKEN_OWNER = "did:yidindji:master";
 const TOKEN_NAME = "Yidindji Dollar";
@@ -6,9 +7,6 @@ const CURRENCY_CODE = "SYD";
 const DECIMALS = 2;
 const RESERVABLE_BALANCE = 1;
 
-const ISSUER_DID = "did:ssid:swn";
-const ISSUER_MNEMONICS = "";
-const SUDO_MNEMONICS = "";
 
 async function main() {
     let tokenVC = {

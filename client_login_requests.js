@@ -11,13 +11,12 @@ const { DID_COMM_SERVER_URL, AUTH_SERVER_URL, WHITELISTED_DIDS } = require('./co
 
 
 const axiosInstance = axios.create({
-    baseURL: AUTH_SERVER_URL + "/v1/api",
+    baseURL: AUTH_SERVER_URL,
     timeout: 10000,
 });
 
 let webSocketRef = {};
-const WEBSOCKET_TIMEOUT = 5000; // 10 Seconds
-const ISSUER_APP_ID = "MASTER";
+const WEBSOCKET_TIMEOUT = 5000; 
 
 async function get_dids() {
     return WHITELISTED_DIDS;
@@ -25,12 +24,12 @@ async function get_dids() {
 
 async function verify_token(token) {
     return new Promise((resolve, reject) => {
-        axiosInstance.post("/token/verify/", {
+        axiosInstance.post("/v1/api/token/verify/", {
             token,
         }).then((response) => {
             if (response?.data?.data?.is_verified === true) {
                 resolve(response.data);
-            } else { 
+            } else {
                 reject(new Error("Token verification failed"));
             }
         }).catch((err) => {
@@ -52,7 +51,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
     const newSignature = utils.bytesToHex(keypair.sign(newHash));
     const {
         data: { data },
-    } = await axiosInstance.post("/trust/?app_id=" + app_id, {
+    } = await axiosInstance.post("/v1/api/trust/?app_id=" + app_id, {
         ...trustRequest,
         hash: newHash,
         signature: newSignature,
@@ -69,7 +68,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
     const signinSignature = utils.bytesToHex(keypair.sign(signinHash));
     const {
         data: { data: loginData },
-    } = await axiosInstance.post("/login/?app_id=" + app_id, {
+    } = await axiosInstance.post("/v1/api/login/?app_id=" + app_id, {
         ...signinRequest,
         hash: signinHash,
         signature: signinSignature,
@@ -79,7 +78,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
 
 const authenticate = (user_did, token) => {
     return new Promise((resolve, reject) => {
-        console.time("authenticate-"+user_did);
+        console.time("authenticate-" + user_did);
         if (!webSocketRef[user_did] || webSocketRef[user_did].readyState !== WebSocket.OPEN) {
             return reject(new Error("WebSocket is not open" + user_did));
         }
@@ -143,24 +142,24 @@ const fetchDIDCache = (user_did) => {
     });
 }
 
-const sendConfirmation = (user_did, data) => {
-    return new Promise((resolve, reject) => {
-        console.time("pairwise-confirmation-" + user_did);
+const sendRequestConfirmation = (user_did, data, mnemonics) => {
+    return new Promise(async (resolve, reject) => {
+        console.time("request-confirmation-" + user_did);
         if (!webSocketRef[user_did] || webSocketRef[user_did].readyState !== WebSocket.OPEN) {
             return reject(new Error("WebSocket is not open" + user_did));
         }
 
         const timeout = setTimeout(() => {
             webSocketRef[user_did].removeEventListener("message", handleResponse);
-            reject(new Error("Pairwise Verification Confirmation timed out"));
+            reject(new Error("Request Confirmation timed out"));
         }, WEBSOCKET_TIMEOUT);
 
         const handleResponse = (event) => {
             const message = JSON.parse(event.data);
             console.log("Received message:", message);
-            if (message.event === "PairwiseVerificationConfirmationAck") {
+            if (message.event === "ClientLoginRequestConfirmationAck") {
                 clearTimeout(timeout);
-                console.timeEnd("pairwise-confirmation-" + user_did);
+                console.timeEnd("request-confirmation-" + user_did);
                 webSocketRef[user_did].removeEventListener("message", handleResponse);
                 resolve(message.data);
             }
@@ -168,9 +167,16 @@ const sendConfirmation = (user_did, data) => {
 
         webSocketRef[user_did].addEventListener("message", handleResponse);
 
+        const key_ring = await config.initKeyring();
+        const key_pair = key_ring.addFromMnemonic(mnemonics);
+        let hash = generateHashFromJson(data);
+        const signature = utils.bytesToHex(key_pair.sign(hash));
+
         sendMessage(user_did, {
-            event: "PairwiseVerificationConfirmation",
+            event: "ClientLoginRequestConfirmation",
             data,
+            hash,
+            signature,
         });
     });
 }
@@ -207,91 +213,21 @@ const sendMessage = (user_did, data) => {
     }
 };
 
-function generatePairwiseConfirmationVc(
-    { appId, newPublicKey },
-    owner,
-    sigKeypair
-) {
-    let encodedPublicKey;
-    if (newPublicKey?.length == 64 && !newPublicKey?.startsWith("0x")) {
-        const hexPublicKey = "0x" + newPublicKey;
-        encodedPublicKey = hexPublicKey;
-    } else if (newPublicKey?.length == 48) {
-        const decodedAddress = u8aToHex(decodeAddress(newPublicKey));
-        encodedPublicKey = decodedAddress;
-    } else if (newPublicKey?.length == 66) {
-        encodedPublicKey = newPublicKey;
-    } else {
-        throw new Error("PUBLIC_KEY_ERROR");
-    }
-    let encodedVCProperty, encodedData, hash;
-    let vcProperty = {
-        app_id: utils.encodeData(
-            appId.padEnd(utils.APP_ID_BYTES, "\0"),
-            "app_id_bytes"
-        ),
-        issuer_app_id: utils.encodeData(
-            ISSUER_APP_ID.padEnd(utils.APP_ID_BYTES, "\0"),
-            "app_id_bytes"
-        ),
-        new_public_key: utils.encodeData(encodedPublicKey, "PublicKey"),
-    };
-    encodedVCProperty = utils
-        .encodeData(vcProperty, "AddPubKeyVCProperties")
-        .padEnd(utils.VC_PROPERTY_BYTES * 2 + 2, "0");
 
-    owner = did.sanitiseDid(owner);
-
-    encodedData = utils.encodeData(
-        {
-            vc_property: encodedVCProperty,
-            owner,
-        },
-        "ADD_KEY_VC_HEX"
-    );
-    hash = blake2AsHex(encodedData);
-
-    const sign = utils.bytesToHex(sigKeypair.sign(hash));
-    let vcObject = {
-        hash,
-        owner,
-        signature: sign,
-        vc_property: {
-            app_id: appId,
-            issuer_app_id: ISSUER_APP_ID,
-            new_public_key: newPublicKey,
-        },
-    };
-    return vcObject;
-}
-
-async function approvePairwise(user_did, request, mnemonics) {
+async function approve(user_did, request, mnemonics, token) {
     try {
         console.log("Approving request from:", request.value?.data?.app_id);
-        const key_ring = await config.initKeyring();
-        const key_pair = key_ring.addFromMnemonic(mnemonics);
-        const owner = request.value?.owner;
-        const app_id = request.value?.data?.app_id;
-        const newPublicKey =
-            request.value?.data?.peer_public_key?.startsWith("0x")
-                ? request.value?.data?.peer_public_key?.slice(2)
-                : request.value?.data?.peer_public_key;
         const pairwiseConfirmation = {
-            confirmation: true,
             request_id: request.value?.request_id, // received in FetchDID Request cache KEY
-            did_comm_id: request.value?.did_comm_id, // received in FetchDID Request cache KEY
-            add_pub_key_vc: generatePairwiseConfirmationVc(
-                {
-                    newPublicKey: newPublicKey,
-                    appId: app_id,
-                },
-                owner,
-                key_pair
-            ),
-            peer_socket_id: Number(request.value?.peer_socket_id), // received in FetchDID Request cache KEY
+            did_comm_id: request.value?.did_comm_id,  // received in FetchDID Request cache KEY
+            token,
+            peer_socket_id: +(request.value?.peer_socket_id),  // received in FetchDID Request cache KEY
+            my_did: request.value?.data?.my_did,
+            pair_did: request.value?.data?.pair_did,
+            confirmation: true,
             timestamp: Date.now(),
         };
-        await sendConfirmation(user_did, pairwiseConfirmation);
+        await sendRequestConfirmation(user_did, pairwiseConfirmation, mnemonics);
     } catch (err) {
         console.log(err);
     }
@@ -322,7 +258,7 @@ function eliminateDuplicateRequests(requests) {
 }
 
 function filterPairwiseVerificationRequests(requests) {
-    return requests.filter(request => request?.value?.event === "PairwiseVerification");
+    return requests.filter(request => request?.value?.event === "ClientLoginRequest");
 }
 
 
@@ -376,7 +312,7 @@ async function handle_request(whitelistedDid) {
         console.log("Pending requests after elimination:", pendingRequests);
         let requests = pendingRequests.map(async (request) => {
             console.log("Request:", request);
-            return approvePairwise(user_did, request, mnemonics);
+            return approve(user_did, request, mnemonics, token);
         });
         await Promise.all(requests);
         await closeWebSocket(user_did);
@@ -387,7 +323,7 @@ async function handle_request(whitelistedDid) {
 }
 
 async function handle_job() {
-    console.time("pairwise_requests_handler");
+    console.time("weblogin_requests_handler");
     try {
         let whitelistedDids = await get_dids();
         let processing_requests = [];
@@ -398,10 +334,52 @@ async function handle_job() {
     } catch (err) {
         console.log("Handle Job Failed: ", err);
     }
-    console.timeEnd("pairwise_requests_handler");
+    console.timeEnd("weblogin_requests_handler");
     setImmediate(() => {
         process.exit(0);
     });
 }
 
 handle_job();
+
+
+function flattenJson(json) {
+    let map = new Map();
+
+    function flatten(obj) {
+        if (typeof obj === 'object' && !Array.isArray(obj) && obj !== null) {
+            for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+                    // If value is an object, recursively flatten it
+                    flatten(value);
+                } else if (Array.isArray(value)) {
+                    // If value is an array, concatenate its elements into a single string
+                    const concatenatedArray = value.map((item) => String(item)).join('');
+                    map.set(key, concatenatedArray);
+                } else {
+                    // If it's a primitive value, add it to the map
+                    map.set(key, String(value));
+                }
+            }
+        }
+    }
+
+    flatten(json);
+
+    // Sort the map entries by key
+    return new Map([...map.entries()].sort((a, b) => a[0].localeCompare(b[0])));
+}
+
+function generateHashFromJson(json) {
+    const sortedMap = flattenJson(json);
+    console.log('sortedMap', sortedMap);
+
+    const sortedValues = [...sortedMap.values()];
+    console.log('sortedValues', sortedValues);
+
+    const inputForHash = sortedValues.join('');
+    console.log('inputForHash', inputForHash);
+
+    const hash = '0x' + sha256(inputForHash);
+    return hash;
+}

@@ -3,7 +3,7 @@ const { did: didModule, utils, config, connection } = require('mui-metablockchai
 async function addNewPublicKey(userDid, currentMnemonics, newMnemonics) {
 
     const keyring = await config.initKeyring();
-    const provider = await connection.buildConnection('mainnet');
+    const provider = await connection.buildConnection('testnet');
     const currentMnemonicsKp = await keyring.addFromUri(currentMnemonics);
     const newMnemonicsKp = await keyring.addFromUri(newMnemonics);
     const addKey = {
@@ -19,7 +19,7 @@ async function addNewPublicKey(userDid, currentMnemonics, newMnemonics) {
         provider.disconnect();
     }
 } 
-let userDid = 'did:ssid:fenn';
+let userDid = '';
 let currentMnemonics = '';
 let newMnemonics = '';
 addNewPublicKey(userDid, currentMnemonics, newMnemonics);

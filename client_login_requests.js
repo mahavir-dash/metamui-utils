@@ -38,10 +38,11 @@ async function verify_token(token) {
     });
 }
 
-async function login(user_did, mnemonics, app_id = "MMUISSID") {
+async function login(user_did, mnemonics, domain_id = "metamui") {
     let keyring = await config.initKeyring();
     let keypair = await keyring.addFromUri(mnemonics);
     const trustRequest = {
+        domain_id,
         my_did: did.sanitiseDid(user_did),
         my_public_key: u8aToHex(keypair.publicKey),
         pair_did: "0x6469643a737369643a6d6574616d75695f6261636b656e640000000000000000",
@@ -51,7 +52,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
     const newSignature = utils.bytesToHex(keypair.sign(newHash));
     const {
         data: { data },
-    } = await axiosInstance.post("/v1/api/trust/?app_id=" + app_id, {
+    } = await axiosInstance.post("/v2/api/trust", {
         ...trustRequest,
         hash: newHash,
         signature: newSignature,
@@ -59,6 +60,7 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
 
     const signinTimestamp = `${Math.floor(Date.now() / 1000)}`;
     const signinRequest = {
+        domain_id,
         public_key: u8aToHex(keypair.publicKey),
         server_vc: data,
         timestamp: signinTimestamp,
@@ -68,14 +70,13 @@ async function login(user_did, mnemonics, app_id = "MMUISSID") {
     const signinSignature = utils.bytesToHex(keypair.sign(signinHash));
     const {
         data: { data: loginData },
-    } = await axiosInstance.post("/v1/api/login/?app_id=" + app_id, {
+    } = await axiosInstance.post("/v2/api/login", {
         ...signinRequest,
         hash: signinHash,
         signature: signinSignature,
     });
     return loginData?.token;
 }
-
 const authenticate = (user_did, token) => {
     return new Promise((resolve, reject) => {
         console.time("authenticate-" + user_did);
@@ -289,7 +290,7 @@ async function handle_request(whitelistedDid) {
             }
             await verify_token(whitelistedDid.token);
         } catch (error) {
-            token = await login(whitelistedDid.did, whitelistedDid.mnemonics, whitelistedDid.app_id);
+            token = await login(whitelistedDid.did, whitelistedDid.mnemonics, whitelistedDid.domain_id);
             console.log('Error:', error);
         }
 

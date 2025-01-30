@@ -215,7 +215,8 @@ async function approve(user_did, request, mnemonics, token) {
         const key_ring = await config.initKeyring();
         const key_pair = key_ring.addFromMnemonic(mnemonics);
         let dataToHash = request.value?.data?.hash;
-        let hash = sha256(dataToHash);
+        let hash = "0x" + sha256(dataToHash);
+        console.log('hash:', hash);
         const signature = utils.bytesToHex(key_pair.sign(hash));
 
         const requestData = {

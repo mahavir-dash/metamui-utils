@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Actions</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        .loading { display: none; font-size: 18px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Actions</h1>
+    <button onclick="runScript('client_login_requests.js')">Approve Login Request</button>
+    <button onclick="runScript('authorisation_request.js')">Approve Pairwise Sign Request</button>
+    <p id="loading" class="loading">Processing...</p>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

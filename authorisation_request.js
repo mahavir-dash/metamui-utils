@@ -238,27 +238,34 @@ async function approve(user_did, request, mnemonics, token) {
 
 function eliminateDuplicateRequests(requests) {
     const uniqueRequestsMap = new Map();
-    requests.sort((a, b) => {
-        return (
-            JSON.parse(b?.value)?.data?.timestamp -
-            JSON.parse(a?.value)?.data?.timestamp
-        );
-    });
+
+    // Sort requests in descending order based on timestamp
+    requests.sort((a, b) => 
+        JSON.parse(b?.value)?.data?.timestamp - JSON.parse(a?.value)?.data?.timestamp
+    );
+
     requests.forEach((request) => {
-        let parsedData = JSON.parse(request?.value);
+        if (!request?.value || !request?.key) return; // Skip invalid entries
+
+        let parsedData = JSON.parse(request.value);
         const uniqueKey = `${parsedData?.event}-${parsedData?.data?.app_id}`;
+
+        // If this uniqueKey is not in the map, add it (since requests are sorted, first occurrence is the latest one)
         if (!uniqueRequestsMap.has(uniqueKey)) {
-            parsedData.owner = request?.key?.split("_")?.at(1);
-            parsedData.request_id = request?.key?.split("_")?.at(-1);
-            parsedData.did_comm_id = request?.key?.split("_")?.at(2);
-            parsedData.peer_socket_id = request?.key?.split("_")?.at(3);
+            const parts = request.key.split("_");  // Split once for efficiency
+            parsedData.owner = parts.length > 1 ? parts[1] : null;
+            parsedData.did_comm_id = parts.length > 2 ? parts[2] : null;
+            parsedData.peer_socket_id = parts.length > 3 ? parts[3] : null;
+            parsedData.request_id = parts.length > 0 ? parts.slice(-1)[0] : null;
+
             uniqueRequestsMap.set(uniqueKey, { ...request, value: parsedData });
         }
     });
-    // Convert the map back to an array and sort by value.timestamp in descending order
-    const uniqueRequests = Array.from(uniqueRequestsMap.values());
-    return uniqueRequests;
+
+    // Convert the map back to an array and return sorted by timestamp
+    return Array.from(uniqueRequestsMap.values());
 }
+
 
 function filterRequests(requests) {
     return requests.filter(request => request?.value?.event === "RequestSign");

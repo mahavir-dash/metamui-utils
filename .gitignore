@@ -2,3 +2,4 @@ config.js
 config.prod.js
 node_modules
 .DS_Store
+.env

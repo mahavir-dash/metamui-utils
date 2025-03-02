@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const WHITELISTED_DIDS = [
     // {
     //     did: "did:ssid:qafenn5",
@@ -20,69 +22,76 @@ const WHITELISTED_DIDS = [
     //     token: "eyJhbGciOiJlZDI1NTE5IiwidHlwIjoiTVdUIn0=:eyJlbWFpbCI6InByb2tldmludUBnbWFpbC5jb20iLCJ1aWQiOiIyNjA1ODdmOS05YWQ4LTRhYmEtODU3MC04YzI1Njc2ZjM5NDIiLCJ1c2VyX2RpZCI6IjB4NjQ2OTY0M2E3NTZlN2E2ZTNhNmI2NTc2Njk2ZTc1MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsInVzZXJfcHVibGljX2tleSI6IjB4MDhkMTIzNjIxZjgwYThkMmE3MjU3NGUwYzM0ZjFlMTI5MDAyM2M2MDZkM2E3MTBkYmU0ZjQzMjkxMTc3ZGQ3ZSIsInRhcmdldF9kaWQiOiJkaWQ6c3NpZDptZXRhbXVpX2JhY2tlbmQiLCJ1c2VyX3JvbGUiOiJVc2VyIiwibWV0YWRhdGEiOiJ7XCJ1c2VyX3R5cGVcIjpcIklORElWSURVQUxcIn0iLCJhcHBfaWQiOiJDTzIiLCJpc3N1ZWRfYXQiOiIxNzI4ODg0MzY4IiwiZXhwaXJ5IjoiMzMzNTkyNDM2OCJ9:MHgxZjcyM2U2ODFmNjkzYmFlZGViMjg4YTNmYTU2MjI0NTBkMDQ3NDI3YjJkMjc2YTIzZTkwNDkxMDM1NDk3MTA3ODJmNDJiMDg5YzZmYmRmZDZmMWNlMjVlMGE0OWY5NDRjNzRhMTIwNmIxNjk2MTNjNTNkMzEyOGFkMzBmOGQwOA==",
     //     app_id: "CO2"
     //     },
-        {
-            did: "did:ssid:sama",
-            mnemonics: "render climb hospital hybrid indicate sentence usual soul blast foot spy toilet",
-            token: "",
-            app_id: "SWNWALT",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:birrigubba:john",
-            mnemonics: "index nest roof silly skull random merge junior stem prize input neither",
-            token: "",
-            app_id: "SWNWALT",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:birrigubba:jacob",
-            mnemonics: "better absent media naive onion erode disagree crucial hundred usage trust similar",
-            token: "",
-            app_id: "SWNWALT",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:birrigubba:james",
-            mnemonics: "armor this dice black sponsor captain where zone door wasp release verify",
-            token: "",
-            app_id: "SWNWALT",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:birrigubba:mahavir",
-            mnemonics: "flip purse monkey end bone clip patch curious phrase ladder flower firm",
-            token: "",
-            app_id: "SWNWALT",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:ssid:sumeet",
-            mnemonics: "ill busy hurt dignity purity book mandate planet cupboard mosquito cigar siren fire distance pool bounce discover slim move erupt minimum despair endorse cherry",
-            token: "",
-            app_id: "MMUISSID",
-            domain_id: "birrigubba"
-        },
-        {
-            did: "did:ssid:john",
-            mnemonics: "inform own certain curve invest perfect inject trip mosquito rule veteran remember afford rather air glance loan surge old race diet pigeon search document",
-            token: "",
-            app_id: "MMUISSID",
-            domain_id: "metamui"
-        }
-        
-    ];
-    const AUTH_SERVER_URL = 'https://authenticate.metamui.money';
-    const DID_COMM_SERVER_URL = 'https://didcomm.metamui.money';
-    
-    const ISSUER_DID = "did:ssid:swn";
-    const ISSUER_MNEMONICS = "cruise owner unveil parrot coast gym opera avocado flock diesel able news farm pole visa piano powder help call refuse awake good trumpet perfect";
-    const SUDO_MNEMONICS = "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice";
-    
-    module.exports = {
-        WHITELISTED_DIDS,
-        AUTH_SERVER_URL,
-        DID_COMM_SERVER_URL,
-        ISSUER_DID,
-        ISSUER_MNEMONICS,
-        SUDO_MNEMONICS
+    {
+        did: "did:ssid:sama",
+        mnemonics: process.env.DID_SAMA_MNEMONICS || "",
+        token: process.env.DID_SAMA_TOKEN || "",
+        app_id: "SWNWALT",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:birrigubba:john",
+        mnemonics: process.env.DID_JOHN_BIRRIGUBBA_MNEMONICS || "",
+        token: process.env.DID_JOHN_BIRRIGUBBA_TOKEN || "",
+        app_id: "SWNWALT",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:birrigubba:jacob",
+        mnemonics: process.env.DID_JACOB_MNEMONICS || "",
+        token: process.env.DID_JACOB_TOKEN || "",
+        app_id: "SWNWALT",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:birrigubba:james",
+        mnemonics: process.env.DID_JAMES_MNEMONICS || "",
+        token: process.env.DID_JAMES_TOKEN || "",
+        app_id: "SWNWALT",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:birrigubba:mahavir",
+        mnemonics: process.env.DID_MAHAVIR_MNEMONICS || "",
+        token: process.env.DID_MAHAVIR_TOKEN || "",
+        app_id: "SWNWALT",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:ssid:sumeet",
+        mnemonics: process.env.DID_SUMEET_MNEMONICS || "",
+        token: process.env.DID_SUMEET_TOKEN || "",
+        app_id: "MMUISSID",
+        domain_id: "birrigubba"
+    },
+    {
+        did: "did:ssid:john",
+        mnemonics: process.env.DID_JOHN_SSID_MNEMONICS || "",
+        token: process.env.DID_JOHN_SSID_TOKEN || "",
+        app_id: "MMUISSID",
+        domain_id: "metamui"
+    },
+    {
+        did: "did:ssid:john",
+        mnemonics: process.env.DID_JOHN_METAMUI_MNEMONICS || "",
+        token: process.env.DID_JOHN_METAMUI_TOKEN || "",
+        app_id: "MMUISSID",
+        domain_id: "metamui"
     }
+
+];
+const AUTH_SERVER_URL = process.env.AUTH_SERVER_URL;
+const DID_COMM_SERVER_URL = process.env.DID_COMM_SERVER_URL;
+const ISSUER_DID = process.env.ISSUER_DID;
+const ISSUER_MNEMONICS = process.env.ISSUER_MNEMONICS;
+const SUDO_MNEMONICS = process.env.SUDO_MNEMONICS;
+
+
+module.exports = {
+    WHITELISTED_DIDS,
+    AUTH_SERVER_URL,
+    DID_COMM_SERVER_URL,
+    ISSUER_DID,
+    ISSUER_MNEMONICS,
+    SUDO_MNEMONICS
+}

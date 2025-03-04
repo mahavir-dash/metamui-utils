@@ -77,6 +77,13 @@ const WHITELISTED_DIDS = [
         token: process.env.DID_JOHN_METAMUI_TOKEN || "",
         app_id: "MMUISSID",
         domain_id: "metamui"
+    },
+    {
+        did: "did:ssid:jacob",
+        mnemonics: process.env.DID_JACOB_METAMUI_MNEMONICS || "",
+        token: process.env.DID_JACOB_METAMUI_TOKEN || "",
+        app_id: "MMUISSID",
+        domain_id: "metamui"
     }
 
 ];
